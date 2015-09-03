@@ -10,7 +10,7 @@ abstract class Expr
 case class Var(name: String) extends Expr
 case class Number(num: Dobule) extends Expr
 case class UnOp(operator : Strign, arg : EXpr) extends Expr
-case class BinOp(operator: String, ldfr:Expr, right:Expr) extends Expr
+case class BinOp(operator: String, left:Expr, right:Expr) extends Expr
 ```
 
 ####15.1.1ケースクラス
