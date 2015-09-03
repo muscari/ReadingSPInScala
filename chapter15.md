@@ -35,6 +35,6 @@ case class BinOp(operator: String, left:Expr, right:Expr) extends Expr
 ```scala
 val v = Var("x")
 val op = BinOp("+", Number(1),v)
-op.copy(operator = "-")//上のopの"+"が"-"に変わったインスタンスが作成される
+op.copy(operator = "-")//上のopの"+"が"-"に変わったインスタンスが作成される。
 
 ```
