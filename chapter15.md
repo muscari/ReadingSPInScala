@@ -10,7 +10,7 @@ abstract class Expr
 case class Var(name: String) extends Expr
 case class Number(num: Dobule) extends Expr
 case class UnOp(operator : Strign, arg : EXpr) extends Expr
-case class BinOp(operator: String, ldfr:Expr, right:Expr) extends Expr
+case class BinOp(operator: String, left:Expr, right:Expr) extends Expr
 ```
 
 ####15.1.1ケースクラス
@@ -28,7 +28,7 @@ case class BinOp(operator: String, ldfr:Expr, right:Expr) extends Expr
 	・”==”でequalsを呼び出すことで、ケースクラス間の比較が容易になる。  
 
 4. コンパイラは変更を加えたコピーを作成するために、"copy"メソッドを追加する。  
-	・１つか２つの属性が異なる、ほぼ同じクラスのインスタンスを作成するときに便利。
+	・１つか２つの属性が異なる、ほぼ同じクラスのインスタンスを作成するときに便利。  
 	・名前付きパラメータを使うことで、変更部分のみことなるインスタンスの作成ができる。
 
 ```scala
