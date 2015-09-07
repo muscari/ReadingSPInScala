@@ -9,7 +9,7 @@
 abstract class Expr
 case class Var(name: String) extends Expr
 case class Number(num: Dobule) extends Expr
-case class UnOp(operator : Strign, arg : EXpr) extends Expr
+case class UnOp(operator : Strign, arg : Expr) extends Expr
 case class BinOp(operator: String, left:Expr, right:Expr) extends Expr
 ```
 
@@ -71,7 +71,7 @@ match式の書き方
 ####15.2.1 ワイルドカードパターン
 ワイルドカードパターン(_)はあらゆるオブジェクトにマッチする。  
 ```scala
-def hoge(expr: Expr): Expr = expr match {
+def hoge(expr: Expr): Unit = expr match {
 	case BinOp (op, left, right) => 
 		println(expr + " is a binary operation")
 	case _ =>
@@ -83,7 +83,7 @@ def hoge(expr: Expr): Expr = expr match {
 また、上記のプログラムは以下のようにも書き換えることができる。　
 
 ```scala
-def hoge(expr: Expr): Expr = expr match {
+def hoge(expr: Expr): Unit = expr match {
 	case BinOp (_, _, _) => 
 		println(expr + " is a binary operation")
 	case _ => println("It's something else")
@@ -101,7 +101,7 @@ def hoge(expr: Expr): Expr = expr match {
 
 
 ```scala
-def hoge(expr: Expr): Expr = expr match {
+def hoge(expr: Expr): String = expr match {
 	case 0 => "zero"
 	case somethingElse => "not zero: " + somethingElse
 }
@@ -115,7 +115,7 @@ def hoge(expr: Expr): Expr = expr match {
 
 ```scala
 import math.{E, Pi}
-def hoge(E: Expr): Expr = E match {
+def hoge(E: Expr): String = E match {
 	case Pi => "strange math ? Pi = " + Pi
 	case _ => "OK"
 }
@@ -126,7 +126,7 @@ scalaでは、先頭が小文字になっている単純名はパターン変数
 
 ```scala
 val pi = math.Pi
-def hoge(E: Expr): Expr = E match {
+def hoge(E: Expr): String = E match {
 	case pi =>"strange math? Pi = " + pi
 	case _ => "OK"
 }
@@ -138,7 +138,7 @@ def hoge(E: Expr): Expr = E match {
 コンストラクタパターンは、BinOp("+", e, Number(0))のようにして、オブジェクトのパターンマッチを行う。コンストラクタパターンを使う上で便利なことは、任意の深さまでのチェックが可能となる。
 
 ```scala
-def hoge(expr: Expr): Expr = expr match {
+def hoge(expr: Expr): Unit = expr match {
 	case BinOp("+", e, Number(0)) => println("a deep match")
 	case _ =>
 }
@@ -150,9 +150,83 @@ def hoge(expr: Expr): Expr = expr match {
 ####感想
 いくつかのパターンマッチについて勉強をしたが、印象に残ったことして、定数パターンか変数パターンかの区別をつけるところが難しかった。したがって、コンストラクターパターンを使用した例で、どのような挙動を行うかの練習などを行った。また、手続き型言語では、複数の条件分岐で書かなければならないことを、scalaでは１行で実装できるということが便利だと感じた。	
 
+####15.2.5 シーケンスパターン  
+ListやArrayなどのシーケンス型に対するパターンマッチも可能である。
+```scala
+def hoge(expr: Any): Unit = expr match {
+	case List(0, _, _) => println("found it")//固定長のシーケンスパターン
+	case List(0, _*) => println("found it")//任意の長さのシーケンスパターン
+}
+
+```	
+####15.2.6 タプルパターン
+異なる型を要素として持てるタプルにマッチさせることができる。  
+タプルは(a,b,c)のように表す。
 
 
+####15.2.7 型付きパターン
+型付きパターンは、型のテストと型のキャストとして扱える。
+```scala
+def generalSize(x:Any) = x match {
+	case s:String => s.length
+	case m:Map[_,_] => m.size
+	case _ => -1
+}
 
+```	
+引数はAny型なので、どのような値も引数としてとり、マッチした変数に応じて長さを返す。  
+String型かどうかを調べるときには、isInstanceOf[Strign]を使い
+String型にキャストするときは、asInstanceOf[String]を使う。
+このStringのところには、自分自身で作成したクラスなどを入れることで、チェックもできる。
+
+#####15.2.7.1 型消去(type erasure)
+以下に、Mapの引数がIntとIntであるかどうかの関数を定義する。
+```scala
+def isIntIntMap(x:Any) = x match {
+	case m: Map[Int, Int] => true
+	case _ => false
+}
+
+```	
+しかし、上記の関数では正しい挙動を示してくれない。scalaでは型が消去されるため、パターンマッチの時に比較をできない。だが、配列の時は型消去が原則の例外となる。  
+この章で疑問として上がったのが、15.2.4で学習したコンストラクタパターンの時には、比較ができていたのではないかということである。引数として、Intの引数のみをチェックすれば、型消去の影響は受けないのではないかと考えた。
+
+####15.2.8 変数の束縛
+変数名、@記号、パターンの順序で書くことで、変数束縛パターンとなる。以下が、絶対値演算を２度適用しているときに、適用した数字を返す例である。
+```scala
+def checkAbs(expr:Expr):Expr = expr match {
+	case UnOp("abs", e @ UnOp("abs", _)) => e
+	case _ =>
+}
+```	
+
+
+###15.3 パターンガード
+scalaではパターンを線形なものに制限しているため以下のようなプログラムでは、パターン変数が複数回にわたって使用されているためエラーがでる。
+```scala
+def simplifyAdd(e: Expr) = e match{
+	case BinOp("+", x, x) => BinOp("*", x, Number(2))
+	case _ => e
+}
+```	
+このような場合、if文を使ってパターンガードを書くことで実現する。
+```scala
+def simplifyAdd(e: Expr) = e match{
+	case BinOp("+", x, x) if x == y => BinOp("*", x, Number(2))
+	case _ => e
+}
+
+```	
+###15.4 パターンのオーバーラップ
+パターンでは、書かれた順序でテストされるため、書く順序をしっかりと考慮する必要がある。
+つまり、全ての条件を包括するように書くことが望ましい。
+
+###15.5 シールドクラス
+パターンマッチを書くときに可能なケースを全て網羅するようにしなければならない。
+ケースクラスのスーパークラスをシールド（sealed）クラスにすることで、他のサブクラスを追加できないようにし、すでに知っているサブクラスのみを考えればよい。シールドクラスを継承するケースクラスを使ってマッチ式を書くとコンパイラは対応していないパターンの組み合わせをチェックして警告メッセージで知らせてくれる。
+
+####感想
+今回も、いくつかのパターンマッチについて学習を行ったが、型付きパターンは引数にAnyをとり、そのクラスごとに処理を定義できるという点から、とても便利なマッチングであると感じた。また、シールドクラスを使用することで、パターンの組み合わせの漏れを確認できることから、より完成度の高いプログラムの作成に役立てると感じた。
 
 
 
