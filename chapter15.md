@@ -189,7 +189,19 @@ def isIntIntMap(x:Any) = x match {
 
 ```	
 しかし、上記の関数では正しい挙動を示してくれない。scalaでは型が消去されるため、パターンマッチの時に比較をできない。だが、配列の時は型消去が原則の例外となる。  
-この章で疑問として上がったのが、15.2.4で学習したコンストラクタパターンの時には、比較ができていたのではないかということである。引数として、Intの引数のみをチェックすれば、型消去の影響は受けないのではないかと考えた。
+この章で疑問として上がったのが、15.2.4で学習したコンストラクタパターンの時には、比較ができていたのではないかということである。
+つまり、引数として、Intの引数のみをチェックすれば、型消去の影響は受けないのではないかと考えた。
+以下に例を示す。
+```scala
+case class IntNumberIntNumberMap(i1: Int, i2: Int)
+
+def isIntInt(ini: IntNumberIntNumber) = ini match {
+	case IntNumberIntNumber[j,k] => true
+	case _ => false
+}
+
+```	
+
 
 ####15.2.8 変数の束縛
 変数名、@記号、パターンの順序で書くことで、変数束縛パターンとなる。以下が、絶対値演算を２度適用しているときに、適用した数字を返す例である。
@@ -198,7 +210,8 @@ def checkAbs(expr:Expr):Expr = expr match {
 	case UnOp("abs", e @ UnOp("abs", _)) => e
 	case _ =>
 }
-```	
+```
+このパターンを利用した場合、パターンマッチした値を取りだせることがよい点である。	
 
 
 ###15.3 パターンガード
@@ -212,7 +225,7 @@ def simplifyAdd(e: Expr) = e match{
 このような場合、if文を使ってパターンガードを書くことで実現する。
 ```scala
 def simplifyAdd(e: Expr) = e match{
-	case BinOp("+", x, x) if x == y => BinOp("*", x, Number(2))
+	case BinOp("+", x, y) if x == y => BinOp("*", x, Number(2))
 	case _ => e
 }
 
@@ -224,6 +237,20 @@ def simplifyAdd(e: Expr) = e match{
 ###15.5 シールドクラス
 パターンマッチを書くときに可能なケースを全て網羅するようにしなければならない。
 ケースクラスのスーパークラスをシールド（sealed）クラスにすることで、他のサブクラスを追加できないようにし、すでに知っているサブクラスのみを考えればよい。シールドクラスを継承するケースクラスを使ってマッチ式を書くとコンパイラは対応していないパターンの組み合わせをチェックして警告メッセージで知らせてくれる。
+例えば、NumberとVarのみケースを書いた場合
+```scala
+def describe(e: Expr): String = e match {
+	case Number(_) => "a number"
+	case Var(_) => "a variable"
+}
+//以下はエラーメッセージ
+warning: match is not exhaustive!
+missing combination  UnOp
+missing combination  BinOp
+```	
+UnOpとBinOpのcaseがないよと言ってくれる。
+
+
 
 ####感想
 今回も、いくつかのパターンマッチについて学習を行ったが、型付きパターンは引数にAnyをとり、そのクラスごとに処理を定義できるという点から、とても便利なマッチングであると感じた。また、シールドクラスを使用することで、パターンの組み合わせの漏れを確認できることから、より完成度の高いプログラムの作成に役立てると感じた。
