@@ -204,25 +204,31 @@ def isIntInt(ini: IntNumberIntNumber) = ini match {
 
 
 ####15.2.8 変数の束縛
-変数名、@記号、パターンの順序で書くことで、変数束縛パターンとなる。以下が、絶対値演算を２度適用しているときに、適用した数字を返す例である。
+変数名、@記号、パターンの順序で書くことで、変数束縛パターンとなる。以下の例は、絶対値演算を２度適用しているときに、適用した数字を返す例である。
 ```scala
 def checkAbs(expr:Expr):Expr = expr match {
 	case UnOp("abs", e @ UnOp("abs", _)) => e
 	case _ =>
 }
 ```
+
 このパターンを利用した場合、パターンマッチした値を取りだせることがよい点である。	
 
 
 ###15.3 パターンガード
 scalaではパターンを線形なものに制限しているため以下のようなプログラムでは、パターン変数が複数回にわたって使用されているためエラーがでる。
+
 ```scala
 def simplifyAdd(e: Expr) = e match{
 	case BinOp("+", x, x) => BinOp("*", x, Number(2))
 	case _ => e
 }
-```	
+```
+
+
 このような場合、if文を使ってパターンガードを書くことで実現する。
+
+
 ```scala
 def simplifyAdd(e: Expr) = e match{
 	case BinOp("+", x, y) if x == y => BinOp("*", x, Number(2))
@@ -230,6 +236,9 @@ def simplifyAdd(e: Expr) = e match{
 }
 
 ```	
+
+
+
 ###15.4 パターンのオーバーラップ
 パターンでは、書かれた順序でテストされるため、書く順序をしっかりと考慮する必要がある。
 つまり、全ての条件を包括するように書くことが望ましい。
@@ -238,6 +247,8 @@ def simplifyAdd(e: Expr) = e match{
 パターンマッチを書くときに可能なケースを全て網羅するようにしなければならない。
 ケースクラスのスーパークラスをシールド（sealed）クラスにすることで、他のサブクラスを追加できないようにし、すでに知っているサブクラスのみを考えればよい。シールドクラスを継承するケースクラスを使ってマッチ式を書くとコンパイラは対応していないパターンの組み合わせをチェックして警告メッセージで知らせてくれる。
 例えば、NumberとVarのみケースを書いた場合
+
+
 ```scala
 def describe(e: Expr): String = e match {
 	case Number(_) => "a number"
@@ -248,7 +259,9 @@ warning: match is not exhaustive!
 missing combination  UnOp
 missing combination  BinOp
 ```	
-UnOpとBinOpのcaseがないよと言ってくれる。
+
+
+UnOp とBinOp のcase がないよと言ってくれる。
 
 
 
@@ -256,8 +269,8 @@ UnOpとBinOpのcaseがないよと言ってくれる。
 今回も、いくつかのパターンマッチについて学習を行ったが、型付きパターンは引数にAnyをとり、そのクラスごとに処理を定義できるという点から、とても便利なマッチングであると感じた。また、シールドクラスを使用することで、パターンの組み合わせの漏れを確認できることから、より完成度の高いプログラムの作成に役立てると感じた。
 
 ###15.6 Option型
-scalaでは、オプションの値のための型としてOption型が用意されている。Some(x)のときはxが値となり、値がないときはNoneとなる。注意する点としてOption[String]はString型として扱わずに、Option型となる。  
-また、Stringの部分にはプリミティブ型以外のクラス等も入れることができる。このような、Option型が存在する理由としては、設計をする上で値がない場所が出てきたときに、値が入っていないところをOption型で表せるというメリットと、エラーが出やすいとされるnullを使用しないで済むというメリットがある。
+scalaでは、オプションの値のための型としてOption型が用意されている。Some(x)のときはxが値となり、値がないときはNoneとなる。注意する点としてOption[String]はString型として扱わずに、Option 型となる。  
+また、String の部分にはプリミティブ型以外のクラス等も入れることができる。このような、Option 型が存在する理由としては、設計をする上で値がない場所が出てきたときに、値が入っていないところをOption型で表せるというメリットと、エラーが出やすいとされるnullを使用しないで済むというメリットがある。
 
 
 ###15.7 どこでもパターンを
@@ -273,12 +286,58 @@ val BinOp(op, left, right) = exp
 上記のような式を書けば、タプルを分解して個々の要素に代入がされる。よってケースクラスを操作するときに役立つ。  
 
 ####15.7.2 部分関数としてのケースシーケンス
-つぎはここから
+関数リテラル（関数の実体）が使用できるあらゆる場所で、中括弧で囲んだケースは使用できる。
+
+```scala
+val withDefault: Option[Int] => Int = {
+	case Some(x) => x
+	case None =>0
+}
+
+//以下は実行結果
+>scala withDefault(Some(10))
+res?: Int = 10
+
+>scala withDefault(None)
+res?: Int = 0
+```	
+
+上記の例では、２個のケースを持ち１つ目のSomeでは、数値を返し、None  ではデフォルト値である0を返す。
 
 ####15.7.3 for式内のパターン
+パターンマッチは、for 文の中でも使用ができる。以下の例では、capitalsマップからすべてのキー/値のペアを取り出す。
+
+
+
+```scala
+val capitals = Map("France" -> "Paris", "Japan" -> "Tokyo")
+for((country,city) <- capitals)
+	println("The capital of" + country + "is " + city)
+
+//以下は実行結果
+The capital of France is Paris
+The capital of Japan is Tokyo 
+```	
+
+個々のペアにより、countryとcityの２個に変数が定義され、それぞれでパターンマッチを行う。しかし、シーケンス内にNoneが含まれている場合、そのマッチしない値は捨てられる。以下に例を示す。
+
+
+
+```scala
+val results = List(Some("apple"), None, Some("orange"))
+for(Some(fruit) <- results) println(fruit)
+
+//以下実行結果
+apple
+orange
+```
+
 
 ###15.8 より大きなサンプル
+省略
 
+###15.9 まとめ
+この章では、scala　のケースクラスとパターンマッチについて詳しく学んだ。関数型言語において簡潔なコードを書くには、if文を繰り返し使用するのではなく、この２つのテクニックを使うことは必要不可欠であると感じた。
 
 
 
