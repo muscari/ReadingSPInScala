@@ -56,3 +56,260 @@ rest: List[String] = List(pears)
 ここでの疑問点は、a,b,restの３つの変数を与えたときに、なぜrestのみList型になるのかという点である。  
 これは、::が最後の文字がコロンなので右結合となるからA :: B :: C はA :: (B :: C)となるため、a, bは文字列として返されるが、残りの１つはリストとなるからである。
 
+###16.6 Listクラスの一階メソッド
+この節では、リスト操作プログラムの構成テクニックとして、パラメータとして関数をとらないメソッドである一階メソッドの説明をする。
+
+#### 16.6.1 ２個のリストの連結
+リストの連結は::とよく似た操作で、:::と書かれる。:::は被演算子として２個のリストをとる。xs ::: ysの結果値は、xsのすべての要素の後ろにysのすべての要素が続く形となる。
+
+#### 16.6.2 分割統治原則
+連結メソッドであるappendはパラメータとして、連結される２つのリストをとる、これらのリストは要素型が一致していなければならないが、要素自体はなんでもよい。これは、appendに入力リストの要素型を示す型パラメータを与えれば表現できる。
+
+```scala
+def append[T](xs: List[T], ys: List[T]):List[T]
+```
+appendに実装を設計するにあたり、リストのような再帰的な構造を操作するための分割統治原則を思い出す必要がある。リストを対象とする多くのアルゴリズムはパターンマッチを使って最初に入力リストを単純なケースに分割する。これが、原則の中の分割である。つぎに、個々のケースのための結果値を作る。結果値が空でないリストなら、その一部は同じアルゴリズムを再帰的に呼び出すことによって組み立てる。これが統治にあたる。
+
+#### 16.6.3　リストの長さを計算する：length
+lengthメソッドは、リストの長さを計算する。
+
+```scala
+List(1,2,3).length
+//実行結果
+res3: Int=3
+```
+リストの長さ計算は、配列と異なり、比較的コストのかかる操作となっている。そのためxs.isEmptyのような操作をxs.length == 0に置き換えるの好ましくない。
+
+#### 16.6.4 リストの末尾へのアクセス：initとlast
+lastは（空でない）リストの最後の要素を返し、initは最後の要素を除く部分からなるリストを返す。
+
+```scala
+val abcde = List('a','b','c','d','e')
+
+abcde.last
+res4:Char = e
+
+abcde.init
+res5:List[Char] = List(a,b,c,d)
+```
+この２つの関数も、headやtailと同じように、空のリストに適用すればエラーを返す。
+
+```scala
+List().init
+java.lang.UnsupportedOperationException: Nil.init
+
+List().last
+java.until.NoSuchElementException: Nil.last
+```
+headやtailは、ともに一定の時間で実行されるが、initとlastはリスト全体をたどらないと結果値を計算できないので、リストの長さに比例する計算時間を要する。
+
+#### 16.6.5 リストの反転：reverse
+リストの末尾へのアクセスが頻繁に行われれる場合には、先にリストを反転して、先頭の要素にアクセスすれば計算時間の短縮になる。リストの反転は以下のようにする。
+
+```scala
+abcde.reverse
+res6: List[Char] = List(e,d,c,b,a)
+
+```
+reverseメソッドは他のリスト操作と同様に、操作対象のリストを書き換えるのではなく新しいリストを作る。
+リストはイミュータブルなので、変更は不可能である。
+
+#### 16.6.6 プレフィックスとサフィックス:drop,take,splitAt
+dropとtakeは、リストの先頭と末尾から任意の要素数のリストを返すものである。
+splitAtは指定された添え字の位置でリストを分割し、２個のリストのペアを返す。
+
+```scala
+abcde take 2
+res8: List[Char] = List(a,b)
+
+abcde drop 2
+res9: List[Char] = List(c,d,e)
+
+abcde splitAt 2
+res10: (List[Char],List[Char]) = (List(a,b),List(c,d,e))
+```
+
+#### 16.6.7 要素の選択：applyとindices
+ランダムな要素のアクセス方法としてapplyメソッドがありますが、リストではこの操作はあまり使用されない。
+
+```scala
+abcde apply 2
+res11: Char = c
+
+abcde(2)//applyが省略されている
+res12: Char = c
+```
+indicesメソッドでは、リスト内の有効なすべての添字から構成されるリストを返す。
+
+```scala
+abcde.indices
+res13: scala.collection.immutable.Range = Range(0,1,2,3,4)
+```
+
+#### 16.6.8 リストのリストから単層のリストへ：flatten
+flattenメソッドは複数のリストを引数にとり、それらを１つのリストに平坦化する。
+
+```scala
+List(List(1,2),List(3),List(),List(4,5)).flatten
+res14:List[Int] = List(1,2,3,4,5)
+```
+
+#### 16.6.9 リストのジッパー操作：zipとunzip
+zipは２個のリストから、ペアのリストを１つ作る。zipWithIndexでは自動でインデックスをつけてくれる。
+
+```scala
+abcde.indices zip abcde
+res17: scala.collection.immutable.IndexedSeq[(Int, Char)] = IndexedSeq((0,a),(1,b),(2,c),(3,d),(4,e))
+
+//上と同じ操作になる
+abcde.zipWithIndex
+res18: scala.collection.immutable.IndexedSeq[(Int, Char)] = IndexedSeq((0,a),(1,b),(2,c),(3,d),(4,e))
+
+```
+引数となるリストの長さが異なる場合は、短い方にあわせられ、相手のない要素は捨てられる。
+unzipメソッドでは、タプルのリスト（複数組のリスト）をリストのタプル（リストの複数組）に変えられる。
+
+```scala
+val zipped 0 abcde zip List(1,2,3)
+zipped: List[(Char, Int)] = List((a,1),(b,2),(c,3))
+
+zipped.unzip
+res19: (List[Char], List[Int]) = (List(a,b,c),List(1,23))
+```
+
+#### 16.6.10 リストの表示：toStringとmkString
+toStringは、リストの標準的な文字列表現を返す。toStringとは別の表現で欲しい場合は、xs mkString(pre, sep, post)を使うことで実現できます。
+
+```scala
+abcde mkStrig ("[", ",", "]")
+res21:Strign = [a,b,c,d,e]
+```
+mkStringを使えば、データをcsv形式で表現するときに、便利そうですね。
+
+#### 16.6.11 リストの変換：iterator,toArray,copyToArray
+Array型とList型の変換には、toArrayとtoListを使えば変換できます。 
+また、指定した場所にArrayの要素をコピーしたい場合は、copyToArrayが使えます。
+
+```scala
+val arr2 = new Array[Int](10)
+List(1,2,3) copyToArray(arr2, 3)
+arr2
+//結果
+res28:Array[Int] = Array(0,0,0,1,2,3,0,0,0,0)
+```
+これは、arr2の３番目の要素からスタートしてList(1,2,3)をコピーするというコードになります。  
+iteratorメソッドを使用すればリストの１つ１つの要素にアクセスできます。
+
+```scala
+val it = abcde.iterator
+it.next
+res29: Char = a
+it.next
+res30: Char = b
+```
+
+#### 16.6.12 サンプル：マージソート
+省略
+
+### 16.7 Listクラスの高階メソッド
+リストを対象とした演算で、すべての要素をなんらか方法で変換するなどをする場合、Javaではfor,whileを使用し表現されていた。scalaではListクラスのメソッドとして実装されている高階演算子を使用し簡潔に表すことができる。
+
+#### 16.7.1 リストの各要素のマッピング（変換）：map,flatMap,foreach
+演算xs map fは、被演算子としてList[T]型のリストxs、T => U型の関数fをとり、xsの個々の要素に関数fを適用した結果値を集めたリストを返す。
+
+```scala
+List(1,2,3) map (_ + 1)
+res32:List[Int] = List(2,3,4)
+
+val words = List("the", "quick", "brown", "fox")
+words map (_.length)
+res33:List[Int] = List(3,5,5,3)
+```
+
+flatMapはmapと似ているるが、右被演算子として要素のリストを返す関数をとる。リストの各要素に関数を適用し、結果値を連結したリストを返す。
+
+```scala
+words map (_.toList)
+res35: List[List(Char)] = List(List(t,h,e),List(q,u,i,c,k),List(b,r,o,w,n),List(f,o,x))
+
+words flatMap (_.toList)
+res36: List[Char] = List(t,h,e,q,u,i,c,k,b,r,o,w,n,f,o,x)
+```
+mapは複数のリストからなるリストを返しているのに対し、flatMapは要素のリストをすべて結合した単一のリストを返している。 
+1<=j<i<5になるすべての(i,j)の対のリストを作ると
+
+```scala
+List.range(1,5) flatMap (i => List.ranga(1,i) map (j => (i, j)))
+res37:List[(Int,Int)] = List((2,1), (3,1),(3,2),(4,1),(4,2),(4,3))
+```
+List.rangeは、一定範囲に含まれるすべての整数のリストを作るメソッドである。  
+foreachは右被演算子として手続き（結果型がUnitの関数）をとる。Unit型であるため、結果のリストを作らない。
+
+```scala
+var sum = 0
+List(1,2,3,4,5) foreach (sum += _)
+sum
+res39: Int = 15
+```
+
+#### 16.7.2 リストのフィルタリング：filter,partition,find,takeWhile,dropWhile,span
+xs filter pは被演算子として、List[T]型のリストxs、T => Boolean型の述語関数pをとり、結果値としてxsの中でp(x)がtrueになるすべての要素xを集めたリストを返す。
+
+```scala
+List(1,2,3,4,5) filter (_ % 2 == 0)
+res40:List[Int] = List(2,4)
+```
+ここで、感じたのが現在すべての要素を表すプレースフォルダーだが、その場所を演算で使えるのかということだ。
+例えば、List(1,2,3,4,5)の各要素に１を加算して、２で割り切れるもののもとの数字をフィルタする。という命題があったとしよう。
+（単純に、奇数をとってくればよいのだが（笑））
+はじめに考えた手法としては
+
+```scala
+List(1,2,3,4,5) filter ((_ + 1) % 2 == 0)
+<console>error: missing parameter type for expanded	
+		function((x$1) => x$1.$plus(1))
+		List(1,2,3,4,5) filter((_ + 1) % 2 == 0)
+								^
+```
+という感じに怒られてしまった。  
+結果的にどうすればよかったのかというと、ヒントは「List[T]型のリストxs、T => Boolean型の述語関数pをとる」ここにありました。つまり、filterの右では関数をとり、その結果がBoolean型になればよいので、直接、関数を書き込めばいいんです。
+
+```scala
+List(1,2,3,4,5) filter ((i:Int) => (i + 1) % 2 == 0)
+res41: List[Int] = List(1,3,5)	
+```
+こんな感じで、ちゃんと返してくれました。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
