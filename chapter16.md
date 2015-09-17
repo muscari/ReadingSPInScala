@@ -278,12 +278,119 @@ List(1,2,3,4,5) filter ((_ + 1) % 2 == 0)
 List(1,2,3,4,5) filter ((i:Int) => (i + 1) % 2 == 0)
 res41: List[Int] = List(1,3,5)	
 ```
-こんな感じで、ちゃんと返してくれました。
+こんな感じで、ちゃんと返してくれました。  
 
+続いて、partitionメソッドは、filterとにているが、リストのペアを返すものである。片方のリストには述語関数がtrueになるものを格納しており、もう一方はfalseになるものを格納する。
 
+```scala
+List(1,2,3,4,5) partition (_ % 2 == 0)
+res42: List(List[Int],List[Int]) = (List(2,4), List(1,3,5))
+```
 
+findメソッドも述語関数がtrueとなるものを返すが、filterとpartitionと違うのは、要素のリストではなく、最初の要素を返す。注意する点としては、返されるのはOption値である。
 
+```scala
+List(1,2,3,4,5) find (_ % 2 == 0)
+res43: Option[Int] = Some(2)
 
+List(1,2,3,4,5) find (_ <= 0)
+res44: Option[Int] = None
+```
+
+takeWhileとdropWhileも、右被演算子として述語関数をとる。xs takeWhile pは、リストxsの先頭からpを成功させる要素の連続を取れるだけ取って返す。逆に、dropWhileはリストの先頭から成功させる要素の連続を削除して、残りのリストを返す。
+
+```scala
+List(1,2,3,-4,5) takeWhile(_ > 0)
+res45:List[Int] = List(1,2,3)
+
+List("the","quick","brown","fox") dropWhile (_.startsWith "t")
+res46:List[java.lang.String] = List(quick, brown, fox)
+```
+spanメソッドは、takeWhileとdropWhileを１つにまとめたものである
+
+```scala
+List(1,2,3,-4,5) span(_ > 0)
+res47: (List[Int],List[Int]) = (List(1,2,3),List(-4,5))
+```
+
+#### 16.7.3 リストを対象とする述語関数:forallとexists
+forallはリストのすべての要素が述語関数を満足するとき結果値がtrueになる。一方、existsは、述語関数を満足させる要素がある場合にtrueを返す。以下の例は、与えられるリストのすべての要素が0の場合をチェックする関数である。
+
+```scala
+def hasZeroRow(m: List[List(Int)]) =
+	m exists (row => row forall (_ == 0))
+
+val diag3 =
+	List(
+		List(1,0,0),
+		List(0,1,0),
+		List(0,0,1)
+		)
+
+hasZeroRow(diag3)
+res48: Boolean = false
+```
+
+#### 16.7.4 リストの畳み込み:　/:と:\
+リストの畳み込みの演算として、左畳み込み/:と右畳み込み:\が存在する。 
+例えば、List(1,2,3)のすべての和を左畳み込みで表現すると、0 + 1 + 2 + 3は
+
+```scala
+def sum(xs : List[Int]):Int = (0 /: xs) (_ + _)
+```
+
+と定義できる。(z /: xs) (op)は、先頭値のz、リストのxs、二項演算子のopという３つのオブジェクトからなる。結果値は、zを先頭におき、リストの要素を並べて、その間に演算opを適用した値である。その逆の順に処理を行うのが右畳み込みである。左畳み込みと異なる点は、３つの演算子のうち、はじめの２つが逆に現れるところである。
+
+#### 16.7.5 foldを使ったリストの反転
+よくわからなかったので割愛！
+
+#### 16.7.6 リストのソート:sortWith
+リストのソートはsortWithメソッドで実現できる。
+
+```scala
+List(1,-3,4,2,6) sortWith(_<_)
+res51:List[Int] = List(-3,1,2,4,6)
+```
+
+### 16.8 Listオブジェクトのメソッド
+これまでの操作は、すべてListクラスのメソッドとして実装されているので、リストオブジェクトをレシーバとして呼び出す。
+それに対し、Listクラスのコンパニオンオブジェクトであり、グローバルにアクセスできるscala.Listオブジェクトにもメソッドが含まれている。これらの一部のリストを作るファクトリーメソッドである。特定の形のリストを対象として使われるものもある、この節では、これら２つのタイプのメソッドを示す。
+
+####16.8.1 要素からリストを作る：List.apply
+List(1,2,3)とあるがこれは、List.apply(1,2,3)と同じ意味となる
+
+#### 16.8.2 数値の範囲を作る：List.range
+rangeメソッドは、一定範囲の数値から構成されるリストを作るものである。引数としては、List.range(form,until,step)となり開始・終了・加減具合というふうになる。
+
+```scala
+List.range(1,5)
+res54:List[Int] = List(1,2,3,4)
+
+List.range(1,9,2)
+res55:List[Int] = List(1,3,5,7)
+
+List.range(9,1,3)
+res56:List[Int] = List(9,6,3)
+
+```
+
+####16.8.3 同じ値のリストを作る：List.fill
+fillメソッドは、０個以上の同じ要素からリストを作る。引数は、作成するリストの長さとリストに格納する要素の２つである。
+
+```scala
+List.fill(5)('a')
+res57:List[Char] = List(a,a,a,a,a)
+
+List.fill(3)("hello")
+res58:List[java.lang.String] = List(hello,hello,hello)
+
+```
+fillに３個以上の引数を渡すと、多次元リストが作成される。（例：リストのリスト、リストのリストのリスト）
+
+```scala
+List.fill(2,3)('b')
+res59:List[List[Char]] = List(List(b,b,b),List(b,b,b))
+```
 
 
 
