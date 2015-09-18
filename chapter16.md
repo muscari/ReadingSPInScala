@@ -392,12 +392,58 @@ List.fill(2,3)('b')
 res59:List[List[Char]] = List(List(b,b,b),List(b,b,b))
 ```
 
+#### 16.8.4 関数の実行結果にる表の作成:List.tabulate
+tabulateメソッドは、引数にとる関数の計算結果を要素とするリストを作る。第１引数リストには、リストがな何次元になるかを指定し、第２引数リストにはリストの要素となる関数を記述する。fillとの違いは、要素が固定されないところである。
 
+```scala
+val squares = List.tabulate(5)(n => n * n)
+squares: List[Int] = List(0,1,4,9,16)
 
+```
 
+#### 16.8.5 複数リストの連結：List.concat
+concatメソッドは、複数のリストを連結する。連結されるリストは、concatの直接の引数として指定される。
 
+```scala
+List.concat(List('a', 'b'), List('c'))
+res60:List[Char] = List(a,b,c)
+```
 
+###16.9　複数のリストをまとめて処理する方法
+複数のリストをまとめて操作したい時には、タプルのzippedメソッドを使えばリストの共通演算を一般化できる。例として、mapは一般化できるリスト演算の１つである。
 
+```scala
+(List(10,20), List(3,4,5)).zipped.map(_ * _)
+res63: List[Int] = List(30, 80)
+```
+ここでは、二つのリストの積を算出する例を示したが、引数の長さが異なる場合、その要素は捨てられるところに注意する。  
+また、existsやforallにも、zippedと組み合わせて演算することがある。
+
+```scala
+(List("abc", "de"), List(3,2)).zipped.forall(_.length == _)
+res64:Boolean = true
+
+(List("abc", "de"), List(3,2)).zipped.exists(_.length != _)
+res64:Boolean = false
+
+```
+
+###16.10 Scalaの型推論アルゴリズムを理解する
+型推論を理解するにあたり以下に２つの式を示す。
+
+```scala
+msort((x:Char,y:CHar) => x > y)(abcde)
+res66:List[Char] = List(e, d ,c, b, a)
+
+abcde sortWith(_ > _)
+res67:List[Char] = List(e, d ,c, b, a)
+```
+
+２つの式の結果は同じになるが、１つ目の式では引数の型を明示的に示しているのに対し、２つ目の式では、型を指定していない。
+このsortWithメソッドでは、型推論が行われており、abcdeがList[Char]型であるから、sortWithの引数もChar型になるであろうとscala側が認識しているため、このように簡潔に書ける。
+
+###16.11 まとめ
+本章では、リストに関する様々なメソッドと、その過程での型推論について学んだ。
 
 
 
